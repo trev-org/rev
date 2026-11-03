@@ -1,4 +1,4 @@
-name: CI
+name: Rev CI
 on:
   push:
   pull_request:
@@ -16,15 +16,45 @@ jobs:
         run: xcodegen generate
       - name: Build app
         run: |
-          xcodebuild -project Macmoji.xcodeproj -scheme Macmoji -configuration Debug \
+          xcodebuild -project Rev.xcodeproj -scheme Rev -configuration Debug \
             -destination 'platform=macOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO build
-      - name: Unit tests (MacmojiCore)
-        working-directory: MacmojiCore
+          test -f build/Build/Products/Debug/Rev.app/Contents/Resources/Assets.car
+      - name: Build SwiftPM app bundle
+        run: |
+          XCODE_APP_PATH="$PWD/build/Build/Products/Debug/Rev.app"
+          ARCHS="$(uname -m)" scripts/build-app.sh
+          SWIFTPM_APP_PATH="$PWD/build/Rev.app"
+          ICON_PATH="$SWIFTPM_APP_PATH/Contents/Resources/MenuBarIconTemplate.svg"
+          test -s "$ICON_PATH"
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          properties = json.load(open(
+              "App/Resources/Assets.xcassets/MenuBarIcon.imageset/Contents.json"
+          ))["properties"]
+          assert properties["preserves-vector-representation"] is True
+          assert properties["template-rendering-intent"] == "template"
+          root = ET.parse(
+              "App/Resources/Assets.xcassets/MenuBarIcon.imageset/menubar-icon.svg"
+          ).getroot()
+          children = list(root)
+          assert root.attrib["fill"] == "none"
+          assert len(children) == 1
+          assert children[0].tag.endswith("path")
+          assert children[0].attrib["fill"] == "black"
+          PY
+          xcrun swiftc -swift-version 6 App/Sources/MenuBarIcon.swift \
+            App/Tests/MenuBarIconRuntimeTest.swift \
+            -o "$RUNNER_TEMP/MenuBarIconRuntimeTest"
+          APP_PATH="$XCODE_APP_PATH" "$RUNNER_TEMP/MenuBarIconRuntimeTest"
+          APP_PATH="$SWIFTPM_APP_PATH" "$RUNNER_TEMP/MenuBarIconRuntimeTest"
+      - name: Unit tests (RevCore)
+        working-directory: RevCore
         run: swift test
       - name: Emoji data is up to date
         working-directory: scripts
         run: |
           npm install --no-audit --no-fund
           node gen-emoji.mjs
-          git diff --exit-code -- ../MacmojiCore/Sources/MacmojiCore/Resources/emoji.json
+          git diff --exit-code -- ../RevCore/Sources/RevCore/Resources/emoji.json
