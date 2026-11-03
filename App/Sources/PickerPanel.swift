@@ -7,6 +7,7 @@ final class PickerPanel: NSPanel {
     static let width: CGFloat = 300
     static let rowHeight: CGFloat = 28
     static let verticalPadding: CGFloat = 12
+    static let maxVisibleRows = 8
 
     init(model: PickerModel) {
         super.init(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 100),
@@ -33,7 +34,7 @@ final class PickerPanel: NSPanel {
 
     /// Shows the panel below the caret (or above it if there is no room), clamped to the screen.
     func show(rowCount: Int, caret: NSRect) {
-        let height = CGFloat(max(rowCount, 1)) * Self.rowHeight + Self.verticalPadding
+        let height = Self.height(for: rowCount)
         let screen = NSScreen.screens.first { $0.frame.insetBy(dx: -1, dy: -1).contains(caret.origin) }
             ?? NSScreen.main ?? NSScreen.screens.first
         let visible = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 10_000, height: 10_000)
@@ -50,11 +51,15 @@ final class PickerPanel: NSPanel {
 
     func resize(rowCount: Int) {
         guard isVisible else { return }
-        let height = CGFloat(max(rowCount, 1)) * Self.rowHeight + Self.verticalPadding
+        let height = Self.height(for: rowCount)
         var f = frame
         f.origin.y += f.height - height // keep the top edge fixed
         f.size.height = height
         setFrame(f, display: true)
+    }
+
+    private static func height(for rowCount: Int) -> CGFloat {
+        CGFloat(min(max(rowCount, 1), maxVisibleRows)) * rowHeight + verticalPadding
     }
 }
 

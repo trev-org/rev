@@ -12,6 +12,7 @@ import Testing
         var seen = Set<String>()
         for e in store.emoji {
             XCTAssertFalse(e.names.isEmpty, "\(e.emoji) has no names")
+            XCTAssertFalse(e.label.isEmpty, "\(e.emoji) has no label")
             XCTAssertFalse(e.emoji.isEmpty)
             XCTAssertTrue(seen.insert(e.emoji).inserted, "duplicate \(e.emoji)")
             if let s = e.skins { XCTAssertEqual(s.count, 5) }
@@ -48,8 +49,18 @@ import Testing
 
     @Test func testNoHistoryUsesMatchTierOrder() {
         let r = EmojiSearch(store: small).search("thu", limit: 10)
-        XCTAssertEqual(r.map(\.emoji.emoji), ["C", "A", "B", "D", "E", "F"])
-        XCTAssertEqual(r.map(\.tier), [.exact, .prefix, .prefix, .substring, .fuzzy, .keyword])
+        XCTAssertEqual(r.map(\.emoji.emoji), ["C", "A", "B", "F", "D", "E"])
+        XCTAssertEqual(
+            r.map(\.tier),
+            [
+                .exactShortcode,
+                .shortcodePrefix,
+                .shortcodePrefix,
+                .keywordOrLabelPrefix,
+                .shortcodeOrLabelSubstring,
+                .fuzzy,
+            ]
+        )
     }
 
     @Test func testUsedEyesOutrankUnusedExactEye() {
@@ -64,7 +75,7 @@ import Testing
         let r = EmojiSearch(store: eyeStore, usage: usage).search("eye", limit: 10)
 
         XCTAssertEqual(r.map(\.emoji.emoji), ["👀", "👁"])
-        XCTAssertEqual(r.map(\.tier), [.prefix, .exact])
+        XCTAssertEqual(r.map(\.tier), [.shortcodePrefix, .exactShortcode])
     }
 
     @Test func testUsedFuzzyAndKeywordMatchesOutrankUnusedExact() {
@@ -75,8 +86,8 @@ import Testing
 
         let r = EmojiSearch(store: small, usage: usage).search("thu", limit: 10)
 
-        // Equal frecency falls back to fuzzy before keyword; both used matches precede exact C.
-        XCTAssertEqual(r.map(\.emoji.emoji), ["E", "F", "C", "A", "B", "D"])
+        // Equal frecency falls back to match quality; both used matches precede exact C.
+        XCTAssertEqual(r.map(\.emoji.emoji), ["F", "E", "C", "A", "B", "D"])
     }
 
     @Test func testHigherFrecencyWinsAmongUsedMatches() {
@@ -131,7 +142,10 @@ import Testing
         XCTAssertTrue(s.search("thu").contains { $0.emoji.emoji == "👍" })
         XCTAssertEqual(s.search("FIRE").first?.emoji.emoji, "🔥")
         XCTAssertTrue(s.search("").isEmpty)
-        XCTAssertLessThanOrEqual(s.search("a").count, 8)
+        XCTAssertGreaterThan(s.search("a").count, 8)
+        XCTAssertTrue(s.search("cry").prefix(5).contains { $0.emoji.emoji == "😭" })
+        XCTAssertTrue(s.search("peace").prefix(5).contains { $0.emoji.emoji == "✌️" })
+        XCTAssertTrue(s.search("victory").prefix(5).contains { $0.emoji.emoji == "✌️" })
     }
 
     @Test func testSubsequence() {

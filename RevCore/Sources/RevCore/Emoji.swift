@@ -23,6 +23,8 @@ public struct Emoji: Hashable, Sendable, Identifiable {
     public let names: [String]
     /// Emojibase tags used for keyword search.
     public let keywords: [String]
+    /// Full Unicode/CLDR display name from Emojibase.
+    public let label: String
     /// Five skin-tone variants (light ... dark), if the emoji supports them.
     public let skins: [String]?
     /// Emojibase display order.
@@ -31,10 +33,18 @@ public struct Emoji: Hashable, Sendable, Identifiable {
     public var id: String { emoji }
     public var primaryName: String { names.first ?? "" }
 
-    public init(emoji: String, names: [String], keywords: [String] = [], skins: [String]? = nil, order: Int = 0) {
+    public init(
+        emoji: String,
+        names: [String],
+        keywords: [String] = [],
+        label: String = "",
+        skins: [String]? = nil,
+        order: Int = 0
+    ) {
         self.emoji = emoji
         self.names = names
         self.keywords = keywords
+        self.label = label
         self.skins = skins
         self.order = order
     }

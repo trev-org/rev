@@ -15,15 +15,33 @@ public struct EmojiStore: Sendable {
     }
 
     private struct File: Decodable {
-        struct Entry: Decodable { let e: String; let n: [String]; let k: [String]?; let s: [String]?; let o: Int? }
+        struct Entry: Decodable {
+            let e: String
+            let n: [String]
+            let k: [String]?
+            let l: String?
+            let s: [String]?
+            let o: Int?
+        }
         let source: String
         let emoji: [Entry]
     }
 
     public init(jsonData: Data) throws {
         let file = try JSONDecoder().decode(File.self, from: jsonData)
-        self.init(emoji: file.emoji.map { Emoji(emoji: $0.e, names: $0.n, keywords: $0.k ?? [], skins: $0.s, order: $0.o ?? 0) },
-                  source: file.source)
+        self.init(
+            emoji: file.emoji.map {
+                Emoji(
+                    emoji: $0.e,
+                    names: $0.n,
+                    keywords: $0.k ?? [],
+                    label: $0.l ?? "",
+                    skins: $0.s,
+                    order: $0.o ?? 0
+                )
+            },
+            source: file.source
+        )
     }
 
     /// The emoji database bundled in this package's resources.

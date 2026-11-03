@@ -50,7 +50,7 @@ final class ToolsController: ObservableObject {
     }()
 
     private lazy var emojiPanel: SearchableListPanel = {
-        let panel = SearchableListPanel(size: NSSize(width: 430, height: 460))
+        let panel = SearchableListPanel(size: StandaloneEmojiView.panelSize)
         panel.setRootView(StandaloneEmojiView(
             model: self.emojiModel,
             onChoose: { [weak self] in self?.insertSelectedEmoji() }
