@@ -2,6 +2,7 @@
 import AppKit
 import Foundation
 
+@MainActor
 enum MenuBarIcon {
     static let assetName = "MenuBarIcon"
     static let swiftPMResourceName = "MenuBarIconTemplate"

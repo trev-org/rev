@@ -44,7 +44,7 @@ jobs:
           assert children[0].tag.endswith("path")
           assert children[0].attrib["fill"] == "black"
           PY
-          xcrun swiftc App/Sources/MenuBarIcon.swift \
+          xcrun swiftc -swift-version 6 App/Sources/MenuBarIcon.swift \
             App/Tests/MenuBarIconRuntimeTest.swift \
             -o "$RUNNER_TEMP/MenuBarIconRuntimeTest"
           APP_PATH="$XCODE_APP_PATH" "$RUNNER_TEMP/MenuBarIconRuntimeTest"

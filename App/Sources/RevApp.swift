@@ -4,6 +4,7 @@ import AppKit
 import RevCore
 
 @main
+@MainActor
 struct RevApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var settings: AppSettings
@@ -32,6 +33,7 @@ struct RevApp: App {
                 .environmentObject(tools)
                 .environmentObject(snippets)
         } label: {
+            // Use this exact instance; name-based loading can drop isTemplate for raw SVGs.
             Image(nsImage: MenuBarIcon.image)
                 .renderingMode(.template)
                 .accessibilityLabel("rev")

@@ -4,6 +4,7 @@ import Foundation
 
 @main
 struct MenuBarIconRuntimeTest {
+    @MainActor
     static func main() {
         let appPath = ProcessInfo.processInfo.environment["APP_PATH"]!
         guard let bundle = Bundle(path: appPath) else {
