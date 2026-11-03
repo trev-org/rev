@@ -29,8 +29,8 @@ Run from Xcode (Debug logs the caret source per app in Console: filter on `rev`)
 - [ ] Build through Xcode and verify the menu bar shows the 18pt Rev lightning bolt, not the old
   smiley. Check light mode, dark mode and the highlighted/pressed menu state; macOS should tint it.
 - [ ] Build with `scripts/build-app.sh`, confirm
-  `build/Rev.app/Contents/Resources/MenuBarIcon.svg` exists, then launch that app and verify the
-  same icon loads and tints correctly.
+  `build/Rev.app/Contents/Resources/MenuBarIconTemplate.svg` exists, then launch that app and
+  verify the same icon loads and tints correctly.
 - [ ] The app icon and DMG artwork still use their existing art; the menu bar glyph is not reused
   for either one.
 

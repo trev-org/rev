@@ -22,21 +22,33 @@ jobs:
           test -f build/Build/Products/Debug/Rev.app/Contents/Resources/Assets.car
       - name: Build SwiftPM app bundle
         run: |
+          XCODE_APP_PATH="$PWD/build/Build/Products/Debug/Rev.app"
           ARCHS="$(uname -m)" scripts/build-app.sh
-          test -s build/Rev.app/Contents/Resources/MenuBarIcon.svg
-          ICON_PATH="$PWD/build/Rev.app/Contents/Resources/MenuBarIcon.svg" xcrun swift -e '
-          import AppKit
-          import Foundation
-          let path = ProcessInfo.processInfo.environment["ICON_PATH"]!
-          let image = NSImage(contentsOfFile: path)
-          precondition(image != nil, "MenuBarIcon.svg did not load")
-          let icon = image!
-          precondition(icon.size.width == 18 && icon.size.height == 18, "Unexpected icon size")
-          icon.isTemplate = true
-          precondition(icon.isTemplate, "Menu bar icon is not a template")
-          precondition(icon.setName(NSImage.Name("MenuBarIcon")), "Could not register icon")
-          precondition(NSImage(named: NSImage.Name("MenuBarIcon")) != nil, "Icon lookup failed")
-          '
+          SWIFTPM_APP_PATH="$PWD/build/Rev.app"
+          ICON_PATH="$SWIFTPM_APP_PATH/Contents/Resources/MenuBarIconTemplate.svg"
+          test -s "$ICON_PATH"
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          properties = json.load(open(
+              "App/Resources/Assets.xcassets/MenuBarIcon.imageset/Contents.json"
+          ))["properties"]
+          assert properties["preserves-vector-representation"] is True
+          assert properties["template-rendering-intent"] == "template"
+          root = ET.parse(
+              "App/Resources/Assets.xcassets/MenuBarIcon.imageset/menubar-icon.svg"
+          ).getroot()
+          children = list(root)
+          assert root.attrib["fill"] == "none"
+          assert len(children) == 1
+          assert children[0].tag.endswith("path")
+          assert children[0].attrib["fill"] == "black"
+          PY
+          xcrun swiftc App/Sources/MenuBarIcon.swift \
+            App/Tests/MenuBarIconRuntimeTest.swift \
+            -o "$RUNNER_TEMP/MenuBarIconRuntimeTest"
+          APP_PATH="$XCODE_APP_PATH" "$RUNNER_TEMP/MenuBarIconRuntimeTest"
+          APP_PATH="$SWIFTPM_APP_PATH" "$RUNNER_TEMP/MenuBarIconRuntimeTest"
       - name: Unit tests (RevCore)
         working-directory: RevCore
         run: swift test

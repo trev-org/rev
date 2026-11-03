@@ -57,7 +57,7 @@ for b in "$BIN_DIR"/*.bundle; do
 done
 
 # Xcode compiles this into Assets.car; the hand-assembled SwiftPM app needs the source image.
-MENU_BAR_ICON="$APP/Contents/Resources/MenuBarIcon.svg"
+MENU_BAR_ICON="$APP/Contents/Resources/MenuBarIconTemplate.svg"
 cp App/Resources/Assets.xcassets/MenuBarIcon.imageset/menubar-icon.svg "$MENU_BAR_ICON"
 [[ -s "$MENU_BAR_ICON" ]] || { echo "error: menu bar icon was not bundled" >&2; exit 1; }
 
