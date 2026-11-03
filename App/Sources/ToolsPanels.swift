@@ -56,6 +56,7 @@ final class StandaloneEmojiModel: ObservableObject {
     @Published private(set) var results: [EmojiSearch.Result] = []
     @Published var selection = 0
     @Published var tone: SkinTone = .none
+    @Published private(set) var scrollRevision = 0
 
     var selected: EmojiSearch.Result? {
         results.indices.contains(selection) ? results[selection] : nil
@@ -69,8 +70,9 @@ final class StandaloneEmojiModel: ObservableObject {
     }
 
     func refresh() {
-        results = AppController.shared.searchEmoji(query, limit: 12)
+        results = AppController.shared.searchEmoji(query)
         selection = min(selection, max(0, results.count - 1))
+        scrollRevision &+= 1
     }
 
     func select(_ index: Int) {
@@ -144,6 +146,8 @@ struct ToolLauncherView: View {
 }
 
 struct StandaloneEmojiView: View {
+    static let panelSize = CGSize(width: 430, height: 360)
+
     @ObservedObject var model: StandaloneEmojiModel
     let onChoose: @MainActor () -> Void
 
@@ -161,7 +165,8 @@ struct StandaloneEmojiView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 2) {
-                        ForEach(Array(model.results.enumerated()), id: \.element.emoji.id) { index, result in
+                        ForEach(model.results.indices, id: \.self) { index in
+                            let result = model.results[index]
                             HStack(spacing: 10) {
                                 Text(result.emoji.rendered(tone: model.tone))
                                     .font(.system(size: 22))
@@ -170,7 +175,6 @@ struct StandaloneEmojiView: View {
                                     .font(.system(size: 13, weight: index == model.selection ? .semibold : .regular))
                                 Spacer()
                             }
-                            .id(result.emoji.id)
                             .foregroundStyle(index == model.selection ? Color.white : Color.primary)
                             .padding(.horizontal, 10)
                             .frame(height: 34)
@@ -178,6 +182,7 @@ struct StandaloneEmojiView: View {
                                 index == model.selection ? Color.accentColor : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 7)
                             )
+                            .id(index)
                             .contentShape(Rectangle())
                             .onTapGesture { model.select(index) }
                             .onTapGesture(count: 2) { model.select(index); onChoose() }
@@ -199,7 +204,11 @@ struct StandaloneEmojiView: View {
                 }
                 .onChange(of: model.selection) { _, index in
                     guard model.results.indices.contains(index) else { return }
-                    proxy.scrollTo(model.results[index].emoji.id, anchor: .center)
+                    proxy.scrollTo(index, anchor: .center)
+                }
+                .onChange(of: model.scrollRevision) { _, _ in
+                    guard model.results.indices.contains(model.selection) else { return }
+                    proxy.scrollTo(model.selection, anchor: .top)
                 }
             }
 
@@ -209,7 +218,7 @@ struct StandaloneEmojiView: View {
                 .foregroundStyle(.secondary)
                 .padding(.vertical, 8)
         }
-        .frame(width: 430, height: 460)
+        .frame(width: Self.panelSize.width, height: Self.panelSize.height)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -218,7 +227,7 @@ struct StandaloneEmojiView: View {
     }
 
     private func displayName(_ result: EmojiSearch.Result) -> String {
-        result.tier == .keyword ? result.emoji.primaryName : result.matchedName
+        result.displayName
     }
 }
 #endif

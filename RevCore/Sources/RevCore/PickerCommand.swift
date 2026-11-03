@@ -66,11 +66,11 @@ public struct PickerSearch: Sendable {
         self.commands = commands
     }
 
-    /// Returns all matching commands in addition to up to `emojiLimit` emoji.
+    /// Returns all matching commands and emoji.
     ///
     /// Exact/prefix command matches lead the list. Substring/fuzzy command matches are appended
     /// after emoji, so commands never acquire or interfere with emoji frecency.
-    public func search(_ query: String, emojiLimit: Int = 8) -> [PickerSearchResult] {
+    public func search(_ query: String, emojiLimit: Int = .max) -> [PickerSearchResult] {
         let commandMatches = Self.commandMatches(query, commands: commands)
         let priority = commandMatches.filter(\.isPriority).map(PickerSearchResult.command)
         let secondary = commandMatches.filter { !$0.isPriority }.map(PickerSearchResult.command)

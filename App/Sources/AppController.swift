@@ -158,7 +158,7 @@ final class AppController: ObservableObject {
         usage.flush()
     }
 
-    func searchEmoji(_ query: String, limit: Int = 12) -> [EmojiSearch.Result] {
+    func searchEmoji(_ query: String, limit: Int = .max) -> [EmojiSearch.Result] {
         search?.emojiSearch.search(query, limit: limit) ?? []
     }
 
@@ -426,7 +426,7 @@ final class AppController: ObservableObject {
 
     private func showPicker(query: String) {
         guard let search else { return }
-        var results = search.search(query, emojiLimit: 8)
+        var results = search.search(query)
         results.removeAll {
             if case .emoji = $0 { return !settings.enabled }
             if case .command(let match) = $0 { return !isCommandAvailable(match.command) }

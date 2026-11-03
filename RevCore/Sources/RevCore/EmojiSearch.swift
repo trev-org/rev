@@ -1,14 +1,20 @@
 import Foundation
 
-/// Ranked shortcode search.
+/// Ranked shortcode, keyword, and Unicode/CLDR label search.
 ///
 /// Any matching emoji with usage history ranks before an unused match, ordered by descending
 /// frecency. Equal frecency (including all never-used emoji) falls back to match quality:
-/// exact name > prefix > substring > fuzzy subsequence > keyword, then the shorter matched name
-/// and emoji database order.
+/// exact shortcode > exact keyword/label word > shortcode prefix > keyword/label-word prefix >
+/// shortcode/label substring > fuzzy subsequence, then the shorter matched term and emoji
+/// database order.
 public struct EmojiSearch: Sendable {
     public enum Tier: Int, Comparable, Sendable {
-        case exact = 0, prefix, substring, fuzzy, keyword
+        case exactShortcode = 0
+        case exactKeywordOrLabel
+        case shortcodePrefix
+        case keywordOrLabelPrefix
+        case shortcodeOrLabelSubstring
+        case fuzzy
         /// Query-free result selected from usage history.
         case history
 
@@ -17,9 +23,14 @@ public struct EmojiSearch: Sendable {
 
     public struct Result: Equatable, Sendable {
         public let emoji: Emoji
-        /// The name (or keyword) that matched.
+        /// The shortcode, keyword, label word, or full label that matched.
         public let matchedName: String
         public let tier: Tier
+
+        /// A shortcode suitable for display in the picker.
+        public var displayName: String {
+            emoji.names.contains(matchedName) ? matchedName : emoji.primaryName
+        }
     }
 
     public let store: EmojiStore
@@ -30,9 +41,9 @@ public struct EmojiSearch: Sendable {
         self.usage = usage
     }
 
-    public func search(_ rawQuery: String, limit: Int = 8) -> [Result] {
+    public func search(_ rawQuery: String, limit: Int = .max) -> [Result] {
         guard limit > 0 else { return [] }
-        let query = rawQuery.lowercased()
+        let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let usageScores = usage?.scores() ?? [:]
         var scored: [(Result, Double, Int)] = []
 
@@ -72,16 +83,48 @@ public struct EmojiSearch: Sendable {
         func consider(_ t: Tier, _ n: String) {
             if best == nil || t < best!.0 || (t == best!.0 && n.count < best!.1.count) { best = (t, n) }
         }
-        for n in e.names {
-            if n == q { consider(.exact, n) }
-            else if n.hasPrefix(q) { consider(.prefix, n) }
-            else if n.contains(q) { consider(.substring, n) }
-            else if q.count >= 2, isSubsequence(q, of: n) { consider(.fuzzy, n) }
+
+        let shortcodes = e.names.map { ($0.lowercased(), $0) }
+        let keywords = e.keywords.map { ($0.lowercased(), $0) }
+        let label = (e.label.lowercased(), e.label)
+        let labelWords = words(in: e.label).map { ($0, $0) }
+
+        for (normalized, original) in shortcodes where normalized == q {
+            consider(.exactShortcode, original)
         }
-        if best == nil {
-            for k in e.keywords where k.lowercased().hasPrefix(q) { consider(.keyword, k) }
+        for (normalized, original) in keywords + labelWords where normalized == q {
+            consider(.exactKeywordOrLabel, original)
+        }
+        if !label.0.isEmpty, label.0 == q {
+            consider(.exactKeywordOrLabel, label.1)
+        }
+        for (normalized, original) in shortcodes where normalized.hasPrefix(q) {
+            consider(.shortcodePrefix, original)
+        }
+        for (normalized, original) in keywords + labelWords where normalized.hasPrefix(q) {
+            consider(.keywordOrLabelPrefix, original)
+        }
+        for (normalized, original) in shortcodes where normalized.contains(q) {
+            consider(.shortcodeOrLabelSubstring, original)
+        }
+        if !label.0.isEmpty, label.0.contains(q) {
+            consider(.shortcodeOrLabelSubstring, label.1)
+        }
+
+        // Fuzzy matching is a fallback only. It must not hide a real keyword or label match.
+        if best == nil, q.count >= 2 {
+            for (normalized, original) in shortcodes + keywords + labelWords + [label]
+            where !normalized.isEmpty && isSubsequence(q, of: normalized) {
+                consider(.fuzzy, original)
+            }
         }
         return best
+    }
+
+    static func words(in value: String) -> [String] {
+        value.lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map(String.init)
     }
 
     static func isSubsequence(_ q: String, of s: String) -> Bool {

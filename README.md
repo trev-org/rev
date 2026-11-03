@@ -24,7 +24,7 @@ with Xcode or Command Line Tools only, and the core logic is unit-tested in CI. 
 - Off by default in Slack and Discord (they have their own picker); never active in password
   fields / while secure input is on.
 - Emoji data: [emojibase-data](https://github.com/milesj/emojibase) v18 (MIT), Slack (iamcal)
-  shortcodes first, GitHub names as aliases, emojibase tags as search keywords.
+  shortcodes first, GitHub names as aliases, and emojibase tags plus Unicode/CLDR labels for search.
 
 ## Layout
 ```
@@ -274,8 +274,9 @@ Pinned to `emojibase-data` 18.0.0 in `scripts/package.json`.
   emoji and weaker command matches follow them; command rows never participate in emoji frecency.
   Clipboard History and Snippets use the same command mechanism.
 - Ranking puts matching emoji with usage history first, ordered by descending frecency. Ties and
-  never-used emoji fall back to exact name → prefix → substring → fuzzy subsequence → keyword,
-  then shorter matched name and database order. Frecency is
+  never-used emoji fall back to exact shortcode → exact keyword/label word → shortcode prefix →
+  keyword/label-word prefix → shortcode/label substring → fuzzy subsequence, then shorter matched
+  term and database order. Frecency is
   `log2(useCount + 1) × 0.5^(daysSinceLastUse / 7)`, so a frequently chosen weaker match can rank
   above an unused exact name. The logarithm prevents runaway frequency, while one inactive week
   halves the score. This affects picker results only; closing-colon auto-replacement still requires

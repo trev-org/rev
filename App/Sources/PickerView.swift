@@ -8,15 +8,17 @@ final class PickerModel: ObservableObject {
     @Published var results: [PickerSearchResult] = []
     @Published var selection = 0
     @Published var tone: SkinTone = .none
+    @Published private(set) var scrollRevision = 0
     var onChoose: (@MainActor (Int) -> Void)?
 
     var selected: PickerSearchResult? { results.indices.contains(selection) ? results[selection] : nil }
 
     func set(query: String, results: [PickerSearchResult], tone: SkinTone) {
-        self.query = query
         self.results = results
         self.tone = tone
         selection = 0
+        self.query = query
+        scrollRevision &+= 1
     }
 
     func move(_ delta: Int) {
@@ -29,28 +31,41 @@ struct PickerView: View {
     @ObservedObject var model: PickerModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(model.results.enumerated()), id: \.element.id) { index, result in
-                Group {
-                    switch result {
-                    case .emoji(let emoji):
-                        PickerRow(
-                            result: emoji,
-                            tone: model.tone,
-                            isSelected: index == model.selection
-                        )
-                    case .command(let command):
-                        PickerCommandRow(
-                            match: command,
-                            isSelected: index == model.selection
-                        )
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(model.results.indices, id: \.self) { index in
+                        Group {
+                            switch model.results[index] {
+                            case .emoji(let emoji):
+                                PickerRow(
+                                    result: emoji,
+                                    tone: model.tone,
+                                    isSelected: index == model.selection
+                                )
+                            case .command(let command):
+                                PickerCommandRow(
+                                    match: command,
+                                    isSelected: index == model.selection
+                                )
+                            }
+                        }
+                        .id(index)
+                        .contentShape(Rectangle())
+                        .onTapGesture { model.onChoose?(index) }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { model.onChoose?(index) }
+                .padding(6)
+            }
+            .onChange(of: model.selection) { _, index in
+                guard model.results.indices.contains(index) else { return }
+                proxy.scrollTo(index, anchor: .center)
+            }
+            .onChange(of: model.scrollRevision) { _, _ in
+                guard model.results.indices.contains(model.selection) else { return }
+                proxy.scrollTo(model.selection, anchor: .top)
             }
         }
-        .padding(6)
         .frame(width: PickerPanel.width, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.secondary.opacity(0.25)))
@@ -103,9 +118,8 @@ private struct PickerRow: View {
         .background(isSelected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 6))
     }
 
-    /// Show the matched alias when it differs from the primary name, else the primary name.
     private var displayName: String {
-        result.tier == .keyword ? result.emoji.primaryName : result.matchedName
+        result.displayName
     }
 }
 #endif
