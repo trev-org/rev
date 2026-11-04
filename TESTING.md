@@ -122,8 +122,9 @@ Reset first: `defaults delete com.trevorgerald.rev` and
 - [ ] A large image remains responsive while its thumbnail is prepared off-main; images over
   50 MB are skipped.
 - [ ] Copy the same item twice with another item between: it moves to the top without duplicating.
-- [ ] Search by text, URL, file name, source app and a fuzzy subsequence. All/Text/Images/Links/Files
-  filters show only the requested types.
+- [ ] Search by case-insensitive text, URL, file name or source app substring. The list shrinks to
+  matches, selects the first match, and shows an empty state for no matches. Clearing the query
+  restores the full history. All/Text/Images/Links/Files filters show only the requested types.
 - [ ] Pin with ⌘P: pinned items form the top section. ⌘Backspace deletes the selected item. Clear
   Clipboard History asks for confirmation, deletes unpinned entries and preserves pinned entries.
 - [ ] Set each retention option and relaunch. Expired unpinned entries are removed; pinned entries
