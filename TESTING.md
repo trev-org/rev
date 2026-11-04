@@ -92,7 +92,7 @@ Reset first: `defaults delete com.trevorgerald.rev` and
   Space. The shortcut is displayed in Menu → **Tools…**, works globally through Carbon, and
   reports a conflict if another app already registered it. Set the shortcut to Off and confirm
   neither the key shortcut nor a modifier chord opens Tools.
-- [ ] Tools opens near the mouse with Emoji Picker, Clipboard History and Snippets. Search by tool
+- [ ] Tools opens near the mouse with Clipboard History, Snippets and Emoji Picker. Search by tool
   name or keyword, navigate with ↑/↓, open with Enter/double-click, and close with Esc.
 - [ ] Open each tool from Tools. With text in its search field, Backspace deletes one character
   and stays in the tool. With the search empty, Backspace returns to Tools with that tool still
@@ -122,8 +122,9 @@ Reset first: `defaults delete com.trevorgerald.rev` and
 - [ ] A large image remains responsive while its thumbnail is prepared off-main; images over
   50 MB are skipped.
 - [ ] Copy the same item twice with another item between: it moves to the top without duplicating.
-- [ ] Search by text, URL, file name, source app and a fuzzy subsequence. All/Text/Images/Links/Files
-  filters show only the requested types.
+- [ ] Search by case-insensitive text, URL, file name or source app substring. The list shrinks to
+  matches, selects the first match, and shows an empty state for no matches. Clearing the query
+  restores the full history. All/Text/Images/Links/Files filters show only the requested types.
 - [ ] Pin with ⌘P: pinned items form the top section. ⌘Backspace deletes the selected item. Clear
   Clipboard History asks for confirmation, deletes unpinned entries and preserves pinned entries.
 - [ ] Set each retention option and relaunch. Expired unpinned entries are removed; pinned entries

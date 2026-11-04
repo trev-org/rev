@@ -5,7 +5,7 @@ import RevCore
 @MainActor
 final class ToolLauncherModel: ObservableObject {
     @Published var query = "" {
-        didSet { if query != oldValue { refresh() } }
+        didSet { if query != oldValue { refresh(selectingFirst: true) } }
     }
     @Published private(set) var results: [RevTool] = []
     @Published var selection = 0
@@ -27,9 +27,9 @@ final class ToolLauncherModel: ObservableObject {
         refresh()
     }
 
-    func refresh() {
+    func refresh(selectingFirst: Bool = false) {
         results = registry.search(query)
-        selection = min(selection, max(0, results.count - 1))
+        selection = selectingFirst ? 0 : min(selection, max(0, results.count - 1))
     }
 
     func select(_ index: Int) {

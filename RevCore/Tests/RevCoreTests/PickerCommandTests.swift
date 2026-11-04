@@ -9,6 +9,13 @@ import Testing
         keywords: ["clipboard", "history", "paste"],
         systemImageName: "clipboard"
     )
+    private let snippets = PickerCommand(
+        id: "snippets",
+        name: "Snippets",
+        aliases: ["snippet", "snippets"],
+        keywords: ["snippet", "text", "template", "expand"],
+        systemImageName: "text.quote"
+    )
 
     @Test func commandMatchesNameAliasesAndKeywords() {
         for query in ["cl", "clip", "clipboard", "hist", "paste"] {
@@ -47,5 +54,11 @@ import Testing
         XCTAssertEqual(search.exactCommand(named: "clipboard")?.id, "clipboard-history")
         XCTAssertEqual(search.exactCommand(named: "clipboard_history")?.id, "clipboard-history")
         XCTAssertEqual(search.exactCommand(named: "paste"), nil)
+    }
+
+    @Test func equallyRelevantCommandsPreserveConfiguredToolOrder() {
+        let matches = PickerSearch.commandMatches("i", commands: [clipboard, snippets])
+
+        XCTAssertEqual(matches.map(\.command.id), ["clipboard-history", "snippets"])
     }
 }

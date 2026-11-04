@@ -70,12 +70,6 @@ final class ToolsController: ObservableObject {
     private init() {
         var registry = ToolRegistry()
         registry.register(RevTool(
-            id: "emoji",
-            name: "Emoji Picker",
-            keywords: ["emoji", "smiley", "reaction"],
-            systemImageName: "face.smiling"
-        ))
-        registry.register(RevTool(
             id: "clipboard",
             name: "Clipboard History",
             keywords: ["clipboard", "history", "paste"],
@@ -86,6 +80,12 @@ final class ToolsController: ObservableObject {
             name: "Snippets",
             keywords: ["snippet", "text", "template", "expand"],
             systemImageName: "text.quote"
+        ))
+        registry.register(RevTool(
+            id: "emoji",
+            name: "Emoji Picker",
+            keywords: ["emoji", "smiley", "reaction"],
+            systemImageName: "face.smiling"
         ))
         toolModel = ToolLauncherModel(registry: registry)
     }
@@ -164,13 +164,6 @@ final class ToolsController: ObservableObject {
             }
         }
         switch tool.id {
-        case "emoji":
-            toolsPanel.hide()
-            emojiModel.reset(tone: settings.skinTone)
-            emojiPanel.toolLaunchContext = toolLaunchContext
-            activePanel = .emoji
-            emojiPanel.showOnActiveScreen()
-
         case "clipboard":
             guard settings.clipboardHistoryEnabled else {
                 NSSound.beep()
@@ -192,6 +185,13 @@ final class ToolsController: ObservableObject {
                 focusedElement: previousFocusedElement,
                 toolLaunchContext: toolLaunchContext
             )
+
+        case "emoji":
+            toolsPanel.hide()
+            emojiModel.reset(tone: settings.skinTone)
+            emojiPanel.toolLaunchContext = toolLaunchContext
+            activePanel = .emoji
+            emojiPanel.showOnActiveScreen()
 
         default:
             break

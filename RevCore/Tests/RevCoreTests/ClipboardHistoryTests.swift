@@ -53,7 +53,7 @@ import Testing
         XCTAssertEqual(duplicate.copiedAt, clock.now)
     }
 
-    @Test func searchCoversContentFileNamesSourcesFuzzyAndFilters() {
+    @Test func searchUsesCaseInsensitiveSubstringsAcrossDisplayedFieldsAndFilters() {
         let clock = ClipboardTestClock()
         let store = ClipboardHistoryStore(now: { clock.now })
         store.record(
@@ -82,9 +82,12 @@ import Testing
             source: ClipboardSource(bundleIdentifier: "com.apple.Preview", name: "Preview")
         )
 
-        XCTAssertEqual(store.search("hello").map(\.kind), [.text])
-        XCTAssertEqual(store.search("qtrly").map(\.kind), [.files])
-        XCTAssertEqual(store.search("safari").map(\.kind), [.link])
+        XCTAssertEqual(store.search("").count, 4)
+        XCTAssertEqual(store.search("HELLO").map(\.kind), [.text])
+        XCTAssertEqual(store.search("quarterly").map(\.kind), [.files])
+        XCTAssertTrue(store.search("qtrly").isEmpty)
+        XCTAssertEqual(store.search("SAFARI").map(\.kind), [.link])
+        XCTAssertEqual(store.search("10×10").map(\.kind), [.image])
         XCTAssertEqual(store.search("", filter: .links).map(\.kind), [.link])
         XCTAssertEqual(store.search("", filter: .files).map(\.kind), [.files])
         XCTAssertEqual(store.search("", filter: .images).map(\.kind), [.image])

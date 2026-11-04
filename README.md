@@ -12,8 +12,8 @@ Raycast-style snippets provide reusable multi-line text with optional expansion 
 keyword such as `;sig` to expand it in place, or type `:sn` and choose **Snippets** to search,
 preview and insert one at the original cursor.
 
-Press **⌥Space** anywhere to open **Tools**, a searchable launcher for Emoji Picker, Clipboard
-History and Snippets. Backspace on an empty search returns to the Tools list.
+Press **⌥Space** anywhere to open **Tools**, a searchable launcher for Clipboard History, Snippets
+and Emoji Picker. Backspace on an empty search returns to the Tools list.
 
 Status: **early prototype, in daily use.** The app builds and runs on macOS 14+ (Apple silicon)
 with Xcode or Command Line Tools only, and the core logic is unit-tested in CI. See

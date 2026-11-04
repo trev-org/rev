@@ -255,46 +255,24 @@ public enum ClipboardHistorySearch {
         filter: ClipboardTypeFilter = .all
     ) -> [ClipboardItem] {
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        var matches: [(item: ClipboardItem, quality: Int)] = []
+        var matches: [ClipboardItem] = []
 
         for item in items where filter.includes(item) {
-            let quality: Int
-            if query.isEmpty {
-                quality = 0
-            } else {
+            if !query.isEmpty {
                 let fields = item.content.searchableValues
+                    + [item.content.displayText]
                     + [item.source.name, item.source.bundleIdentifier].compactMap { $0 }
-                let qualities = fields.compactMap { matchQuality(query, in: $0.lowercased()) }
-                guard let best = qualities.min() else { continue }
-                quality = best
+                guard fields.contains(where: { $0.lowercased().contains(query) }) else { continue }
             }
-            matches.append((item, quality))
+            matches.append(item)
         }
 
         matches.sort { lhs, rhs in
-            if lhs.item.isPinned != rhs.item.isPinned { return lhs.item.isPinned }
-            if lhs.quality != rhs.quality { return lhs.quality < rhs.quality }
-            if lhs.item.copiedAt != rhs.item.copiedAt { return lhs.item.copiedAt > rhs.item.copiedAt }
-            return lhs.item.id.uuidString < rhs.item.id.uuidString
+            if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+            if lhs.copiedAt != rhs.copiedAt { return lhs.copiedAt > rhs.copiedAt }
+            return lhs.id.uuidString < rhs.id.uuidString
         }
-        return matches.map(\.item)
-    }
-
-    /// Substring matches rank before fuzzy subsequence matches.
-    static func matchQuality(_ query: String, in candidate: String) -> Int? {
-        if candidate.contains(query) { return 0 }
-        return isSubsequence(query, of: candidate) ? 1 : nil
-    }
-
-    static func isSubsequence(_ query: String, of candidate: String) -> Bool {
-        var iterator = candidate.makeIterator()
-        outer: for character in query {
-            while let next = iterator.next() {
-                if next == character { continue outer }
-            }
-            return false
-        }
-        return true
+        return matches
     }
 }
 

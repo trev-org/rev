@@ -117,10 +117,10 @@ final class SearchableListPanel: NSPanel {
 @MainActor
 final class ClipboardHistoryModel: ObservableObject {
     @Published var query = "" {
-        didSet { if query != oldValue { refresh() } }
+        didSet { if query != oldValue { refresh(selectingFirst: true) } }
     }
     @Published var filter: ClipboardTypeFilter = .all {
-        didSet { if filter != oldValue { refresh() } }
+        didSet { if filter != oldValue { refresh(selectingFirst: true) } }
     }
     @Published private(set) var items: [ClipboardItem] = []
     @Published var selection = 0
@@ -140,15 +140,16 @@ final class ClipboardHistoryModel: ObservableObject {
     func reset() {
         query = ""
         filter = .all
-        selection = 0
-        refresh()
-        scrollRequest += 1
+        refresh(selectingFirst: true)
     }
 
-    func refresh() {
-        let selectedID = selected?.id
+    func refresh(selectingFirst: Bool = false) {
+        let selectedID = selectingFirst ? nil : selected?.id
         items = store.search(query, filter: filter)
-        if let selectedID, let index = items.firstIndex(where: { $0.id == selectedID }) {
+        if selectingFirst {
+            selection = 0
+            scrollRequest &+= 1
+        } else if let selectedID, let index = items.firstIndex(where: { $0.id == selectedID }) {
             selection = index
         } else {
             selection = min(selection, max(0, items.count - 1))
@@ -249,9 +250,13 @@ struct ClipboardHistoryView: View {
                     }
                     if model.items.isEmpty {
                         ContentUnavailableView(
-                            "No Clipboard Items",
+                            hasActiveFilter ? "No Matches" : "No Clipboard Items",
                             systemImage: "clipboard",
-                            description: Text("Copied items that match this search appear here.")
+                            description: Text(
+                                hasActiveFilter
+                                    ? "No clipboard items match this search."
+                                    : "Copied items appear here."
+                            )
                         )
                         .padding(.top, 60)
                     }
@@ -276,6 +281,11 @@ struct ClipboardHistoryView: View {
         } else {
             ContentUnavailableView("No Selection", systemImage: "clipboard")
         }
+    }
+
+    private var hasActiveFilter: Bool {
+        !model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || model.filter != .all
     }
 
     private func sectionStarts(at index: Int) -> Bool {

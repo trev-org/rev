@@ -18,11 +18,6 @@ struct MenuContent: View {
         } else {
             Button("Tools…") { tools.showTools() }
         }
-        Button("Snippets…") { snippets.showSnippets() }
-        Button("Create Snippet…") { snippets.createSnippet() }
-        Button("Import Snippets…") { snippets.importSnippets() }
-        Button("Export Snippets…") { snippets.exportSnippets() }
-        Divider()
         Button("Clipboard History…") { clipboardHistory.showHistory() }
             .disabled(!settings.clipboardHistoryEnabled)
         Button(settings.clipboardHistoryPaused ? "Resume Clipboard History" : "Pause Clipboard History") {
@@ -31,6 +26,11 @@ struct MenuContent: View {
         .disabled(!settings.clipboardHistoryEnabled)
         Button("Clear Clipboard History…") { clipboardHistory.confirmClearHistory() }
             .disabled(!settings.clipboardHistoryEnabled)
+        Divider()
+        Button("Snippets…") { snippets.showSnippets() }
+        Button("Create Snippet…") { snippets.createSnippet() }
+        Button("Import Snippets…") { snippets.importSnippets() }
+        Button("Export Snippets…") { snippets.exportSnippets() }
         Divider()
         if !controller.isTrusted && controller.hasStarted {
             Button("Grant Accessibility…") { controller.showPermissionPrompt() }
