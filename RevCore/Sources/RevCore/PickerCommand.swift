@@ -93,7 +93,8 @@ public struct PickerSearch: Sendable {
         let query = normalizedTerm(rawQuery)
         guard !query.isEmpty else { return [] }
 
-        return commands.compactMap { command in
+        return commands.enumerated().compactMap {
+            index, command -> (match: PickerCommandMatch, index: Int)? in
             let terms = [command.name] + command.aliases + command.keywords
             let matches = terms.compactMap { term -> PickerCommandMatch? in
                 let normalized = normalizedTerm(term)
@@ -111,17 +112,15 @@ public struct PickerSearch: Sendable {
                 }
                 return PickerCommandMatch(command: command, matchedTerm: term, tier: tier)
             }
-            return matches.min {
+            guard let match = matches.min(by: {
                 if $0.tier != $1.tier { return $0.tier < $1.tier }
                 return $0.matchedTerm.count < $1.matchedTerm.count
-            }
+            }) else { return nil }
+            return (match, index)
         }.sorted {
-            if $0.tier != $1.tier { return $0.tier < $1.tier }
-            if $0.command.name.count != $1.command.name.count {
-                return $0.command.name.count < $1.command.name.count
-            }
-            return $0.command.name < $1.command.name
-        }
+            if $0.match.tier != $1.match.tier { return $0.match.tier < $1.match.tier }
+            return $0.index < $1.index
+        }.map { $0.match }
     }
 
     private static func normalizedTerm(_ value: String) -> String {

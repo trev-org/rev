@@ -92,7 +92,7 @@ Reset first: `defaults delete com.trevorgerald.rev` and
   Space. The shortcut is displayed in Menu → **Tools…**, works globally through Carbon, and
   reports a conflict if another app already registered it. Set the shortcut to Off and confirm
   neither the key shortcut nor a modifier chord opens Tools.
-- [ ] Tools opens near the mouse with Emoji Picker, Clipboard History and Snippets. Search by tool
+- [ ] Tools opens near the mouse with Clipboard History, Snippets and Emoji Picker. Search by tool
   name or keyword, navigate with ↑/↓, open with Enter/double-click, and close with Esc.
 - [ ] Open each tool from Tools. With text in its search field, Backspace deletes one character
   and stays in the tool. With the search empty, Backspace returns to Tools with that tool still

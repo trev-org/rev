@@ -210,10 +210,10 @@ private struct FinishStep: View {
             Text("↑/↓ choose · Enter or Tab insert · Esc dismiss · type `:fire:` to auto-replace.")
                 .font(.callout).foregroundStyle(.secondary)
             if let shortcutDisplay {
-                Text("Press \(shortcutDisplay) to open Tools: Emoji Picker, Clipboard History, and Snippets.")
+                Text("Press \(shortcutDisplay) to open Tools: Clipboard History, Snippets, and Emoji Picker.")
                     .font(.callout).foregroundStyle(.secondary)
             } else {
-                Text("Open Tools from the lightning-bolt menu to use Emoji Picker, Clipboard History, and Snippets.")
+                Text("Open Tools from the lightning-bolt menu to use Clipboard History, Snippets, and Emoji Picker.")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Text("rev lives in the menu bar (the lightning bolt). It's off in Slack and Discord by default.")
