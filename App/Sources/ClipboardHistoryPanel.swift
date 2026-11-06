@@ -301,8 +301,10 @@ private struct ClipboardHistoryRow: View {
 
     var body: some View {
         HStack(spacing: 9) {
-            Image(systemName: iconName)
-                .frame(width: 22)
+            SourceApplicationIcon(
+                bundleIdentifier: item.source.bundleIdentifier,
+                size: 22
+            )
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: selected ? .semibold : .regular))
@@ -326,16 +328,6 @@ private struct ClipboardHistoryRow: View {
     private var title: String {
         item.content.displayText.replacingOccurrences(of: "\n", with: " ")
     }
-
-    private var iconName: String {
-        switch item.kind {
-        case .text: return "text.alignleft"
-        case .image: return "photo"
-        case .link: return "link"
-        case .files: return "doc"
-        case .color: return "paintpalette"
-        }
-    }
 }
 
 private struct ClipboardHistoryPreview: View {
@@ -351,7 +343,13 @@ private struct ClipboardHistoryPreview: View {
             }
             Divider()
             VStack(alignment: .leading, spacing: 4) {
-                Label(item.source.name ?? "Unknown app", systemImage: "app")
+                HStack(spacing: 6) {
+                    SourceApplicationIcon(
+                        bundleIdentifier: item.source.bundleIdentifier,
+                        size: 16
+                    )
+                    Text(item.source.name ?? "Unknown app")
+                }
                 if let bundle = item.source.bundleIdentifier {
                     Text(bundle).font(.caption.monospaced()).foregroundStyle(.secondary)
                 }
@@ -395,6 +393,23 @@ private struct ClipboardHistoryPreview: View {
                 ContentUnavailableView("Preview Unavailable", systemImage: "photo")
             }
         }
+    }
+}
+
+private struct SourceApplicationIcon: View {
+    let bundleIdentifier: String?
+    let size: CGFloat
+
+    var body: some View {
+        Image(
+            nsImage: SourceApplicationIconProvider.shared.icon(
+                forBundleIdentifier: bundleIdentifier
+            )
+        )
+        .resizable()
+        .scaledToFit()
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 

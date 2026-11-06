@@ -3,10 +3,18 @@ import Testing
 @testable import RevCore
 
 @Suite struct TriggerStateMachineTests {
-    private func run(_ text: String, exact: Set<String> = []) -> (TriggerStateMachine, [TriggerStateMachine.Action]) {
-        var sm = TriggerStateMachine(isExactName: { exact.contains($0) })
+    private func type(
+        _ text: String,
+        into sm: inout TriggerStateMachine
+    ) -> [TriggerStateMachine.Action] {
         var actions: [TriggerStateMachine.Action] = []
         for c in text { actions.append(sm.handle(.character(c))) }
+        return actions
+    }
+
+    private func run(_ text: String, exact: Set<String> = []) -> (TriggerStateMachine, [TriggerStateMachine.Action]) {
+        var sm = TriggerStateMachine(isExactName: { exact.contains($0) })
+        let actions = type(text, into: &sm)
         return (sm, actions)
     }
 
@@ -101,12 +109,36 @@ import Testing
         XCTAssertEqual(sm.state, .armed)
     }
 
-    @Test func testCommitThenColonDoesNotArm() {
-        var (sm, _) = run(":thu")
+    @Test func testRepeatedBackToBackCommits() {
+        var sm = TriggerStateMachine()
+        for query in ["smile", "fire", "rocket"] {
+            let actions = type(":\(query)", into: &sm)
+            XCTAssertEqual(actions.last, .show(query: query))
+            XCTAssertEqual(sm.state, .querying(query))
+            sm.didCommit()
+            XCTAssertEqual(sm.state, .idle)
+        }
+    }
+
+    @Test func testCommitThenSpaceAllowsNextQuery() {
+        var (sm, _) = run(":smile")
         sm.didCommit()
-        XCTAssertEqual(sm.state, .idle)
-        sm.handle(.character(":"))
-        XCTAssertEqual(sm.state, .idle)
+        let actions = type(" :fire", into: &sm)
+        XCTAssertEqual(actions.last, .show(query: "fire"))
+        XCTAssertEqual(sm.state, .querying("fire"))
+    }
+
+    @Test func testRepeatedClosingColonAutoReplace() {
+        var sm = TriggerStateMachine(isExactName: { ["smile", "fire"].contains($0) })
+        XCTAssertEqual(
+            type(":smile:", into: &sm).last,
+            .autoReplace(name: "smile", deleteCount: 7)
+        )
+        sm.didCommit()
+        XCTAssertEqual(
+            type(":fire:", into: &sm).last,
+            .autoReplace(name: "fire", deleteCount: 6)
+        )
     }
 
     @Test func testUppercaseCancels() {

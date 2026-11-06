@@ -111,7 +111,9 @@ public struct TriggerStateMachine: Sendable {
     /// Call after an emoji was inserted (from the picker or auto-replace).
     public mutating func didCommit() {
         state = .idle
-        previous = "\u{FFFC}" // non-boundary placeholder: ':' right after an emoji does not arm
+        // Synthetic insertion events are ignored by the event tap, so explicitly treat the
+        // inserted emoji as a boundary for a directly adjacent shortcode.
+        previous = nil
     }
 
     /// Call when the user dismisses the picker with Esc: the text stays, stop tracking it.
