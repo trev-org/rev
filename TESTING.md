@@ -119,6 +119,8 @@ Reset first: `defaults delete com.trevorgerald.rev` and
   (`#abc`, `#112233`, `#11223380`). Each appears with the correct type, source app and timestamp;
   image previews stay responsive and blobs exist under
   `~/Library/Application Support/Rev/clipboard-blobs/`.
+- [ ] Source-app icons in both list rows and item details match the app that supplied each item.
+  An item whose app is no longer installed shows the unknown-app fallback.
 - [ ] A large image remains responsive while its thumbnail is prepared off-main; images over
   50 MB are skipped.
 - [ ] Copy the same item twice with another item between: it moves to the top without duplicating.
@@ -198,6 +200,8 @@ Reset first: `defaults delete com.trevorgerald.rev` and
 - [ ] `(:smile` and `[:smile` open it.
 - [ ] Space, `/`, uppercase letters, or punctuation close it; text is left as typed.
 - [ ] Backspace shrinks the query; deleting back to 1 char hides it; deleting the `:` stops tracking.
+- [ ] Insert several emoji consecutively, both adjacent (`😄:fire`) and separated by spaces.
+  Every new `:` opens the picker without first pressing Backspace.
 - [ ] Clicking elsewhere, Cmd/Ctrl shortcuts, left/right arrows, or switching apps close it.
 
 ### Picker
