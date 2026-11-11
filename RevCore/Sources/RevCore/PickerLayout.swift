@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(CoreGraphics)
+import CoreGraphics
+#endif
 
 /// The edge of the inline picker that is attached to the text caret.
 public enum PickerAttachmentEdge: Equatable, Sendable {
