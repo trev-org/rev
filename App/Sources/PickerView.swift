@@ -8,6 +8,7 @@ final class PickerModel: ObservableObject {
     @Published var results: [PickerSearchResult] = []
     @Published var selection = 0
     @Published var tone: SkinTone = .none
+    @Published private(set) var attachmentEdge: PickerAttachmentEdge = .top
     @Published private(set) var scrollRevision = 0
     var onChoose: (@MainActor (Int) -> Void)?
 
@@ -21,9 +22,17 @@ final class PickerModel: ObservableObject {
         scrollRevision &+= 1
     }
 
+    func set(attachmentEdge: PickerAttachmentEdge) {
+        guard self.attachmentEdge != attachmentEdge else { return }
+        self.attachmentEdge = attachmentEdge
+        scrollRevision &+= 1
+    }
+
+    /// Moves by on-screen direction, independent of whether results grow up or down from the caret.
     func move(_ delta: Int) {
         guard !results.isEmpty else { return }
-        selection = (selection + delta + results.count) % results.count
+        let resultDelta = attachmentEdge.resultIndexDelta(forVisualDelta: delta)
+        selection = (selection + resultDelta + results.count) % results.count
     }
 }
 
@@ -32,43 +41,67 @@ struct PickerView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(model.results.indices, id: \.self) { index in
-                        Group {
-                            switch model.results[index] {
-                            case .emoji(let emoji):
-                                PickerRow(
-                                    result: emoji,
-                                    tone: model.tone,
-                                    isSelected: index == model.selection
-                                )
-                            case .command(let command):
-                                PickerCommandRow(
-                                    match: command,
-                                    isSelected: index == model.selection
-                                )
+            GeometryReader { geometry in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(
+                            model.attachmentEdge.orderedResultIndices(count: model.results.count),
+                            id: \.self
+                        ) { index in
+                            Group {
+                                switch model.results[index] {
+                                case .emoji(let emoji):
+                                    PickerRow(
+                                        result: emoji,
+                                        tone: model.tone,
+                                        isSelected: index == model.selection
+                                    )
+                                case .command(let command):
+                                    PickerCommandRow(
+                                        match: command,
+                                        isSelected: index == model.selection
+                                    )
+                                }
                             }
+                            .id(index)
+                            .contentShape(Rectangle())
+                            .onTapGesture { model.onChoose?(index) }
                         }
-                        .id(index)
-                        .contentShape(Rectangle())
-                        .onTapGesture { model.onChoose?(index) }
                     }
+                    .padding(6)
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: geometry.size.height,
+                        alignment: model.attachmentEdge.contentAlignment
+                    )
                 }
-                .padding(6)
-            }
-            .onChange(of: model.selection) { _, index in
-                guard model.results.indices.contains(index) else { return }
-                proxy.scrollTo(index, anchor: .center)
-            }
-            .onChange(of: model.scrollRevision) { _, _ in
-                guard model.results.indices.contains(model.selection) else { return }
-                proxy.scrollTo(model.selection, anchor: .top)
+                .defaultScrollAnchor(model.attachmentEdge.scrollAnchor)
+                .onChange(of: model.selection) { _, index in
+                    guard model.results.indices.contains(index) else { return }
+                    let anchor: UnitPoint = index == 0
+                        ? model.attachmentEdge.scrollAnchor
+                        : .center
+                    proxy.scrollTo(index, anchor: anchor)
+                }
+                .onChange(of: model.scrollRevision, initial: true) { _, _ in
+                    guard model.results.indices.contains(model.selection) else { return }
+                    proxy.scrollTo(model.selection, anchor: model.attachmentEdge.scrollAnchor)
+                }
             }
         }
-        .frame(width: PickerPanel.width, alignment: .top)
+        .frame(width: PickerPanel.width, height: PickerPanel.height)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.secondary.opacity(0.25)))
+    }
+}
+
+private extension PickerAttachmentEdge {
+    var contentAlignment: Alignment {
+        self == .top ? .top : .bottom
+    }
+
+    var scrollAnchor: UnitPoint {
+        self == .top ? .top : .bottom
     }
 }
 
