@@ -19,7 +19,7 @@ public enum PickerAttachmentEdge: Equatable, Sendable {
 }
 
 /// Screen placement for the inline picker.
-public struct PickerPanelLayout: Equatable {
+public struct PickerPanelLayout {
     public let frame: CGRect
     public let attachmentEdge: PickerAttachmentEdge
 
