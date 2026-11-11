@@ -35,11 +35,50 @@ import Testing
         XCTAssertEqual(layout.frame.minY, caret.maxY + 4)
     }
 
-    @Test func bestResultAndNavigationHugAttachedEdge() {
-        XCTAssertEqual(PickerAttachmentEdge.top.orderedResultIndices(count: 4), [0, 1, 2, 3])
-        XCTAssertEqual(PickerAttachmentEdge.bottom.orderedResultIndices(count: 4), [3, 2, 1, 0])
+    @Test func resizingBelowCaretPreservesTopEdge() {
+        let original = PickerPanelLayout(
+            frame: CGRect(x: 100, y: 200, width: 300, height: 236),
+            attachmentEdge: .top
+        )
 
-        XCTAssertEqual(PickerAttachmentEdge.top.resultIndexDelta(forVisualDelta: -1), -1)
-        XCTAssertEqual(PickerAttachmentEdge.bottom.resultIndexDelta(forVisualDelta: -1), 1)
+        let shrunk = original.resized(toHeight: 68)
+        let expanded = shrunk.resized(toHeight: 236)
+
+        XCTAssertEqual(shrunk.frame.maxY, original.frame.maxY)
+        XCTAssertEqual(shrunk.frame.height, 68)
+        XCTAssertEqual(expanded.frame.maxY, original.frame.maxY)
+        XCTAssertEqual(expanded.frame.height, 236)
+    }
+
+    @Test func resizingAboveCaretPreservesBottomEdge() {
+        let original = PickerPanelLayout(
+            frame: CGRect(x: 100, y: 200, width: 300, height: 236),
+            attachmentEdge: .bottom
+        )
+
+        let shrunk = original.resized(toHeight: 68)
+        let expanded = shrunk.resized(toHeight: 236)
+
+        XCTAssertEqual(shrunk.frame.minY, original.frame.minY)
+        XCTAssertEqual(shrunk.frame.height, 68)
+        XCTAssertEqual(expanded.frame.minY, original.frame.minY)
+        XCTAssertEqual(expanded.frame.height, 236)
+    }
+
+    @Test func maximumHeightPlacementSupportsLaterResultGrowth() {
+        let caret = CGRect(x: 400, y: 100, width: 0, height: 20)
+        let maximum = PickerPanelLayout.resolve(
+            caret: caret,
+            visibleFrame: visibleFrame,
+            panelSize: panelSize
+        )
+
+        let initiallyNarrow = maximum.resized(toHeight: 40)
+        let expanded = initiallyNarrow.resized(toHeight: panelSize.height)
+
+        XCTAssertEqual(maximum.attachmentEdge, .bottom)
+        XCTAssertEqual(initiallyNarrow.frame.minY, caret.maxY + 4)
+        XCTAssertEqual(expanded.frame.minY, caret.maxY + 4)
+        XCTAssertLessThanOrEqual(expanded.frame.maxY, visibleFrame.maxY)
     }
 }

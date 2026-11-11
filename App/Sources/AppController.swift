@@ -215,14 +215,14 @@ final class AppController: ObservableObject {
             return false
         }
         guard type == .keyDown else {
-            guard Self.isMouseButtonEvent(type) else { return false }
-            // Keep the panel up long enough for a row click to land. Clicking its deliberately
-            // empty area hides it before AppKit dispatches the click to the target application.
-            if pickerShown && panel.containsResults(at: NSEvent.mouseLocation) {
-                snippetBuffer.reset()
-                return false
+            if Self.isMouseButtonEvent(type) {
+                // Clicks inside the picker choose a row; anything else ends tracking.
+                if pickerShown && panel.frame.contains(NSEvent.mouseLocation) {
+                    snippetBuffer.reset()
+                    return false
+                }
+                resetTracking()
             }
-            resetTracking()
             return false
         }
 
@@ -435,6 +435,7 @@ final class AppController: ObservableObject {
         guard !results.isEmpty else { hidePicker(); return }
         model.set(query: query, results: results, tone: settings.skinTone)
         if pickerShown {
+            panel.resize(rowCount: results.count)
             return
         }
         pickerShown = true
@@ -443,7 +444,7 @@ final class AppController: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { [weak self] in
             guard let self, self.pickerShown else { return }
             let location = CaretLocator.locate()
-            self.panel.show(caret: location.rect)
+            self.panel.show(rowCount: self.model.results.count, caret: location.rect)
             #if DEBUG
             NSLog("rev: caret source=\(location.source.rawValue) app=\(self.context.frontmostBundleID ?? "?")")
             #endif

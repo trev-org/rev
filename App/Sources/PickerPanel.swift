@@ -9,14 +9,10 @@ final class PickerPanel: NSPanel {
     static let rowHeight: CGFloat = 28
     static let verticalPadding: CGFloat = 12
     static let maxVisibleRows = 8
-    static let height = CGFloat(maxVisibleRows) * rowHeight + verticalPadding
-    static let size = NSSize(width: width, height: height)
-
-    private let model: PickerModel
+    private var layout: PickerPanelLayout?
 
     init(model: PickerModel) {
-        self.model = model
-        super.init(contentRect: NSRect(origin: .zero, size: Self.size),
+        super.init(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 100),
                    styleMask: [.nonactivatingPanel, .borderless],
                    backing: .buffered, defer: true)
         isFloatingPanel = true
@@ -39,44 +35,34 @@ final class PickerPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 
     /// Shows the panel below the caret (or above it if there is no room), clamped to the screen.
-    func show(caret: NSRect) {
+    func show(rowCount: Int, caret: NSRect) {
+        let height = Self.height(for: rowCount)
+        let maximumHeight = Self.height(for: Self.maxVisibleRows)
         let screen = NSScreen.screens.first { $0.frame.insetBy(dx: -1, dy: -1).contains(caret.origin) }
             ?? NSScreen.main ?? NSScreen.screens.first
         let visible = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 10_000, height: 10_000)
-        let layout = PickerPanelLayout.resolve(
+        // Choose a side using the maximum viewport so later result growth remains on-screen.
+        let maximumLayout = PickerPanelLayout.resolve(
             caret: caret,
             visibleFrame: visible,
-            panelSize: Self.size
+            panelSize: NSSize(width: Self.width, height: maximumHeight)
         )
+        let layout = maximumLayout.resized(toHeight: height)
 
-        model.set(attachmentEdge: layout.attachmentEdge)
+        self.layout = layout
         setFrame(layout.frame, display: true)
         orderFrontRegardless()
     }
 
-    /// Whether a screen point is over the rows rather than the deliberately empty viewport area.
-    func containsResults(at point: NSPoint) -> Bool {
-        guard frame.contains(point) else { return false }
-        let visibleRowCount = min(model.results.count, Self.maxVisibleRows)
-        let resultHeight = CGFloat(visibleRowCount) * Self.rowHeight + Self.verticalPadding
-        let resultFrame: NSRect
-        switch model.attachmentEdge {
-        case .top:
-            resultFrame = NSRect(
-                x: frame.minX,
-                y: frame.maxY - resultHeight,
-                width: frame.width,
-                height: resultHeight
-            )
-        case .bottom:
-            resultFrame = NSRect(
-                x: frame.minX,
-                y: frame.minY,
-                width: frame.width,
-                height: resultHeight
-            )
-        }
-        return resultFrame.contains(point)
+    func resize(rowCount: Int) {
+        guard isVisible, let layout else { return }
+        let resized = layout.resized(toHeight: Self.height(for: rowCount))
+        self.layout = resized
+        setFrame(resized.frame, display: true)
+    }
+
+    private static func height(for rowCount: Int) -> CGFloat {
+        CGFloat(min(max(rowCount, 1), maxVisibleRows)) * rowHeight + verticalPadding
     }
 }
 

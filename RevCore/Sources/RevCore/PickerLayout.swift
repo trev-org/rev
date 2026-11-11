@@ -7,18 +7,6 @@ import CoreGraphics
 public enum PickerAttachmentEdge: Equatable, Sendable {
     case top
     case bottom
-
-    /// Orders result indices so index zero is always at the edge nearest the caret.
-    public func orderedResultIndices(count: Int) -> [Int] {
-        guard count > 0 else { return [] }
-        let indices = Array(0..<count)
-        return self == .top ? indices : Array(indices.reversed())
-    }
-
-    /// Converts an on-screen movement (-1 up, +1 down) into a result-index movement.
-    public func resultIndexDelta(forVisualDelta delta: Int) -> Int {
-        self == .top ? delta : -delta
-    }
 }
 
 /// Screen placement for the inline picker.
@@ -52,5 +40,15 @@ public struct PickerPanelLayout {
             frame: CGRect(origin: CGPoint(x: x, y: y), size: panelSize),
             attachmentEdge: attachmentEdge
         )
+    }
+
+    /// Changes height while preserving the edge attached to the caret.
+    public func resized(toHeight height: CGFloat) -> PickerPanelLayout {
+        var resizedFrame = frame
+        if attachmentEdge == .top {
+            resizedFrame.origin.y += frame.height - height
+        }
+        resizedFrame.size.height = height
+        return PickerPanelLayout(frame: resizedFrame, attachmentEdge: attachmentEdge)
     }
 }
