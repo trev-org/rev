@@ -1,4 +1,5 @@
 #if os(macOS)
+import Dispatch
 import SwiftUI
 import RevCore
 
@@ -56,20 +57,37 @@ struct PickerView: View {
                     }
                 }
                 .padding(6)
+                .id(PickerScrollTarget.top)
             }
             .onChange(of: model.selection) { _, index in
                 guard model.results.indices.contains(index) else { return }
-                proxy.scrollTo(index, anchor: .center)
+                // With no anchor, SwiftUI only scrolls when needed to make the row fully visible.
+                proxy.scrollTo(index)
             }
             .onChange(of: model.scrollRevision) { _, _ in
                 guard model.results.indices.contains(model.selection) else { return }
-                proxy.scrollTo(model.selection, anchor: .top)
+                scrollToTop(using: proxy)
             }
+            .onAppear { scrollToTop(using: proxy) }
         }
         .frame(width: PickerPanel.width, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.secondary.opacity(0.25)))
     }
+
+    private func scrollToTop(using proxy: ScrollViewProxy) {
+        // Target the padded content container, not row zero, so the true scroll offset is zero.
+        proxy.scrollTo(PickerScrollTarget.top, anchor: .top)
+        // Result publication and panel resizing happen in the same event turn. Reset once more
+        // after layout so AppKit cannot preserve a stale offset while the viewport height changes.
+        DispatchQueue.main.async {
+            proxy.scrollTo(PickerScrollTarget.top, anchor: .top)
+        }
+    }
+}
+
+private enum PickerScrollTarget: Hashable {
+    case top
 }
 
 private struct PickerCommandRow: View {
